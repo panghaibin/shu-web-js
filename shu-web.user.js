@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      2.0
-// @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 2.选课排名页面标红排名超过额定人数的课程
+// @version      2.5
+// @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.移除教务管理主页企业微X广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/CourseSelectionStudent/PlanQuery
 // @match        *://xk.autoisp.shu.edu.cn/StudentQuery/QueryEnrollRank
 // @match        *://xk.autoisp.shu.edu.cn/CourseSelectionStudent/FuzzyQuery
+// @match        *://cj.shu.edu.cn/StudentPortal/Evaluate
+// @match        *://cj.shu.edu.cn/Home/StudentIndex
 // @grant        none
 // @license      MIT
 // @supportURL   https://github.com/panghaibin/shu-web-js/issues
@@ -24,16 +26,30 @@
     // 刷课间隔，默认 8000 ，单位毫秒 一般不需要修改
     let delay_time = 8000
 
-    if (location.pathname === '/CourseSelectionStudent/PlanQuery') {
-        score_conversion(document);
-    } else if (location.pathname === '/StudentQuery/QueryEnrollRank') {
-        red_rank(document);
-    } else if (location.pathname === '/CourseSelectionStudent/FuzzyQuery'
-        && course_id.length === 8 && teacher_id.length === 4) {
-        select_course_helper(document);
+    //--------教学评估配置--------
+    // 一键赋值等级 1: 非常清楚  2: 比较清楚  3: 一般  4: 不清楚   默认 1
+    let level = 1
+
+    if (location.host === 'xk.autoisp.shu.edu.cn') {
+        if (location.pathname === '/CourseSelectionStudent/PlanQuery') {
+            score_conversion();
+        } else if (location.pathname === '/StudentQuery/QueryEnrollRank') {
+            red_rank();
+        } else if (location.pathname === '/CourseSelectionStudent/FuzzyQuery'
+            && course_id.length === 8 && teacher_id.length === 4 && delay_time > 0) {
+            select_course_helper();
+        }
     }
 
-    function score_conversion(document) {
+    if (location.host === 'cj.shu.edu.cn') {
+        if (location.pathname === '/StudentPortal/Evaluate') {
+            evaluate_helper();
+        } else if (location.pathname === '/Home/StudentIndex' && level > 0 && level < 5) {
+            remove_ad();
+        }
+    }
+
+    function score_conversion() {
         let tdscore, tdscorecpass, tdscorecnotpass, elements;
         tdscore = document.getElementsByName('tdscore');
         tdscorecpass = document.getElementsByName('tdscorecpass');
@@ -82,7 +98,7 @@
         }
     }
 
-    function red_rank(document) {
+    function red_rank() {
         let elements;
         elements = document.getElementsByName('rowclass');
         for (let i = 0; i < elements.length; ++i) {
@@ -99,7 +115,7 @@
         }
     }
 
-    function select_course_helper(document) {
+    function select_course_helper() {
         document.getElementsByName('CID')[0].defaultValue = course_id;
         document.getElementsByName('TeachNo')[0].defaultValue = teacher_id;
         let i = 0;
@@ -116,7 +132,7 @@
                     let across_campus = document.getElementById('NotCollegeAction');
                     if (across_campus != null) {
                         setTimeout(function () {
-                                across_campus.click();
+                            across_campus.click();
                         }, 1000);
                     }
                     tbllist = document.getElementsByClassName('tbllist');
@@ -131,5 +147,30 @@
                 }
             }, 1000);
         }, delay_time);
+    }
+
+    function evaluate_helper() {
+        let tbllist = document.getElementsByClassName('tbllist');
+        let course_count = tbllist[0].children[0].childElementCount - 2;
+        let row = tbllist[0].children[0].children;
+        let evaluate_btn = document.createElement('input');
+        evaluate_btn.type = 'button';
+        evaluate_btn.value = '一键赋值';
+        evaluate_btn.onclick = function (){
+            for (let i = 0; i < course_count; ++i) {
+                for (let j = 0; j < 4; ++j) {
+                    let evaluate_name = 'classlist[' + i + '].ItemValue[' + j + ']';
+                    let select = document.getElementsByName(evaluate_name);
+                    select[0].children[level].selected = true;
+                }
+            }
+        }
+        let last_row = row[row.length - 1].children[0].children[0];
+        let save_btn = last_row.children[0];
+        last_row.insertBefore(evaluate_btn, save_btn);
+    }
+
+    function remove_ad() {
+        document.getElementsByClassName('div_master_content')[0].remove();
     }
 })();
