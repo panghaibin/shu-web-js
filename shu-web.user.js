@@ -1,14 +1,11 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      2.5
-// @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.移除教务管理主页企业微X广告
+// @version      2.6
+// @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.自动选择选课学期 6.移除教务管理主页企业微X广告
 // @author       panghaibin
-// @match        *://xk.autoisp.shu.edu.cn/CourseSelectionStudent/PlanQuery
-// @match        *://xk.autoisp.shu.edu.cn/StudentQuery/QueryEnrollRank
-// @match        *://xk.autoisp.shu.edu.cn/CourseSelectionStudent/FuzzyQuery
-// @match        *://cj.shu.edu.cn/StudentPortal/Evaluate
-// @match        *://cj.shu.edu.cn/Home/StudentIndex
+// @match        *://xk.autoisp.shu.edu.cn/*
+// @match        *://cj.shu.edu.cn/*
 // @grant        none
 // @license      MIT
 // @supportURL   https://github.com/panghaibin/shu-web-js/issues
@@ -38,10 +35,12 @@
         } else if (location.pathname === '/CourseSelectionStudent/FuzzyQuery'
             && course_id.length === 8 && teacher_id.length === 4 && delay_time > 0) {
             select_course_helper();
+        } else if (location.pathname === '/Home/TermIndex' && location.search !== '?auto_select=0') {
+            auto_select_term();
+        } else if (location.pathname !== '/Home/TermIndex') {
+            manual_select_term();
         }
-    }
-
-    if (location.host === 'cj.shu.edu.cn') {
+    } else if (location.host === 'cj.shu.edu.cn') {
         if (location.pathname === '/StudentPortal/Evaluate') {
             evaluate_helper();
         } else if (location.pathname === '/Home/StudentIndex' && level > 0 && level < 5) {
@@ -156,7 +155,7 @@
         let evaluate_btn = document.createElement('input');
         evaluate_btn.type = 'button';
         evaluate_btn.value = '一键赋值';
-        evaluate_btn.onclick = function (){
+        evaluate_btn.onclick = function () {
             for (let i = 0; i < course_count; ++i) {
                 for (let j = 0; j < 4; ++j) {
                     let evaluate_name = 'classlist[' + i + '].ItemValue[' + j + ']';
@@ -172,5 +171,19 @@
 
     function remove_ad() {
         document.getElementsByClassName('div_master_content')[0].remove();
+    }
+
+    function auto_select_term() {
+        let term_list = document.getElementsByName('rowterm');
+        document.getElementById('termId').value = term_list[term_list.length - 1].getAttribute('value');
+        document.getElementsByTagName('button')[0].click();
+    }
+
+    function manual_select_term() {
+        let menu = document.querySelector('.term-menu');
+        if (menu !== null) {
+            let a_tag = menu.getElementsByTagName('a')[0];
+            a_tag.href = a_tag.href + '?auto_select=0';
+        }
     }
 })();
