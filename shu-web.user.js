@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.0
+// @version      3.1
 // @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.选课学期自动选择 6.健康之路未读消息自动阅读 7.移除教务管理主页企业微X广告 8.移除健康之路首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
@@ -29,7 +29,6 @@
     let level = 1
 
     if (location.host === 'xk.autoisp.shu.edu.cn') {
-        add_xk_footer();
         if (location.pathname === '/CourseSelectionStudent/PlanQuery') {
             score_conversion();
         } else if (location.pathname === '/StudentQuery/QueryEnrollRank') {
@@ -39,8 +38,10 @@
             select_course_helper();
         } else if (location.pathname === '/Home/TermIndex' && location.search !== '?auto_select=0') {
             auto_select_term();
-        } else if (location.pathname !== '/Home/TermIndex') {
+        }
+        if (location.pathname !== '/Home/TermIndex') {
             manual_select_term();
+            add_xk_footer();
         }
     } else if (location.host === 'cj.shu.edu.cn') {
         if (location.pathname === '/StudentPortal/Evaluate') {
