@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      2.6
-// @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.自动选择选课学期 6.移除教务管理主页企业微X广告
+// @version      3.0
+// @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.选课学期自动选择 6.健康之路未读消息自动阅读 7.移除教务管理主页企业微X广告 8.移除健康之路首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
 // @match        *://cj.shu.edu.cn/*
+// @match        *://selfreport.shu.edu.cn/*
 // @grant        none
 // @license      MIT
 // @supportURL   https://github.com/panghaibin/shu-web-js/issues
@@ -28,6 +29,7 @@
     let level = 1
 
     if (location.host === 'xk.autoisp.shu.edu.cn') {
+        add_xk_footer();
         if (location.pathname === '/CourseSelectionStudent/PlanQuery') {
             score_conversion();
         } else if (location.pathname === '/StudentQuery/QueryEnrollRank') {
@@ -44,7 +46,13 @@
         if (location.pathname === '/StudentPortal/Evaluate') {
             evaluate_helper();
         } else if (location.pathname === '/Home/StudentIndex' && level > 0 && level < 5) {
-            remove_ad();
+            remove_cj_ad();
+        }
+    } else if (location.host === 'selfreport.shu.edu.cn') {
+        if (location.pathname === '/Default.aspx') {
+            remove_sr_ad();
+        } else if (location.pathname === '/MyMessages.aspx') {
+            read_all_msg();
         }
     }
 
@@ -169,7 +177,7 @@
         last_row.insertBefore(evaluate_btn, save_btn);
     }
 
-    function remove_ad() {
+    function remove_cj_ad() {
         document.getElementsByClassName('div_master_content')[0].remove();
     }
 
@@ -184,6 +192,54 @@
         if (menu !== null) {
             let a_tag = menu.getElementsByTagName('a')[0];
             a_tag.href = a_tag.href + '?auto_select=0';
+        }
+    }
+
+    function add_xk_footer() {
+        let footer = document.getElementsByClassName('main-footer')[0].children[1];
+        footer.innerHTML = footer.innerHTML + ' - <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/434613">刷课助手已开启</a>';
+    }
+
+    function remove_sr_ad() {
+        document.getElementsByClassName('pic slick-initialized slick-slider')[0].remove();
+        document.getElementById('countdown').remove();
+    }
+
+    function read_all_msg() {
+        window.onload = function () {
+            let tips = document.getElementsByClassName('f-panel-title-text')[0];
+            tips.innerText = '即将开始自动阅读所有未读消息【点击此处停止】';
+            let msg_list = document.getElementsByClassName('f-datalist-list')[0];
+            let i = 0;
+            let unread_count = 0;
+            let interval_id = setTimeout(function () {
+                interval_id = setInterval(function () {
+                    tips.innerText = '【点击停止】正在检索第' + (i + 1) + '条消息';
+                    if (i < msg_list.childElementCount) {
+                        let msg_item = msg_list.children[i].children[0];
+                        let msg_title = msg_item.children[0];
+                        let msg_url = msg_item.href;
+                        if (msg_title.innerText.includes('（未读）')) {
+                            let xhr = new XMLHttpRequest();
+                            xhr.open('GET', msg_url);
+                            xhr.send(null);
+
+                            msg_title.innerText = msg_title.innerText.replace('（未读）', '');
+                            tips.innerText = '【点击停止】' + msg_title.innerText;
+                            msg_title.style = '';
+                            unread_count++;
+                        }
+                    } else {
+                        clearInterval(interval_id);
+                        tips.innerText = '自动阅读所有未读消息完成，共' + unread_count + '条';
+                    }
+                    ++i;
+                }, 10);
+            }, 3000);
+            tips.onclick = function () {
+                clearInterval(interval_id);
+                tips.innerText = '已停止，刷新继续';
+            }
         }
     }
 })();
