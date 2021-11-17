@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.1.1
+// @version      3.1.4
 // @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.选课学期自动选择 6.健康之路未读消息自动阅读 7.移除教务管理主页企业微X广告 8.移除健康之路首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
@@ -197,8 +197,12 @@
     }
 
     function add_xk_footer() {
-        let footer = document.getElementsByClassName('main-footer')[0].children[1];
-        footer.innerHTML = footer.innerHTML + ' - <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/434613">刷课助手已开启</a>';
+        setInterval(() => {
+                let footer = document.getElementsByClassName('main-footer')[0].children[1];
+                if (! footer.innerHTML.includes('刷课助手')) {
+                    footer.innerHTML = footer.innerHTML + ' - <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/434613">刷课助手已加载</a>';
+                }
+            }, 0)
     }
 
     function remove_sr_ad() {
@@ -220,7 +224,7 @@
                         let msg_item = msg_list.children[i].children[0];
                         let msg_title = msg_item.children[0];
                         let msg_url = msg_item.href;
-                        if (msg_title.innerText.includes('（未读）')) {
+                        if (msg_title.style.color !== '') {
                             let xhr = new XMLHttpRequest();
                             xhr.open('GET', msg_url);
                             xhr.send(null);
@@ -235,8 +239,8 @@
                         tips.innerText = '自动阅读所有未读消息完成，共' + unread_count + '条';
                     }
                     ++i;
-                }, 10);
-            }, 3000);
+                }, 0);
+            }, 1000);
             tips.onclick = function () {
                 clearInterval(interval_id);
                 tips.innerText = '已停止，刷新继续';
