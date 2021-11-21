@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.1.4
-// @description  1.二三轮选课自助刷课，解放双手【人人有课刷，抵制卖课狗】 2.教学评估页面一键赋值 3.选课系统学分完成情况页面的原始成绩换算成绩点，标红压线分数 4.选课排名页面标红排名超过额定人数的课程 5.选课学期自动选择 6.健康之路未读消息自动阅读 7.移除教务管理主页企业微X广告 8.移除健康之路首页横幅广告
+// @version      3.3.0
+// @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，增加点击课程号查看课程介绍，选课学期可标红 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
 // @match        *://cj.shu.edu.cn/*
@@ -15,22 +15,20 @@
 (function () {
     'use strict';
 
-    //--------刷课配置--------
+    //--------刷课配置 开始--------
     // 任意参数留空将不执行
+
     // 输入课程号
     let course_id = ''
     // 输入对应的教师号
     let teacher_id = ''
     // 刷课间隔，默认 8000 ，单位毫秒 一般不需要修改
     let delay_time = 8000
-
-    //--------教学评估配置--------
-    // 一键赋值等级 1: 非常清楚  2: 比较清楚  3: 一般  4: 不清楚   默认 1
-    let level = 1
+    //--------刷课配置 结束--------
 
     if (location.host === 'xk.autoisp.shu.edu.cn') {
         if (location.pathname === '/CourseSelectionStudent/PlanQuery') {
-            score_conversion();
+            plan_query_page();
         } else if (location.pathname === '/StudentQuery/QueryEnrollRank') {
             red_rank();
         } else if (location.pathname === '/CourseSelectionStudent/FuzzyQuery'
@@ -46,8 +44,10 @@
     } else if (location.host === 'cj.shu.edu.cn') {
         if (location.pathname === '/StudentPortal/Evaluate') {
             evaluate_helper();
-        } else if (location.pathname === '/Home/StudentIndex' && level > 0 && level < 5) {
+        } else if (location.pathname === '/Home/StudentIndex') {
             remove_cj_ad();
+        } else if (location.pathname === '/StudentPortal/ScoreQuery') {
+            auto_fresh_score();
         }
     } else if (location.host === 'selfreport.shu.edu.cn') {
         if (location.pathname === '/Default.aspx' || location.pathname === '/') {
@@ -57,52 +57,40 @@
         }
     }
 
-    function score_conversion() {
-        let tdscore, tdscorecpass, tdscorecnotpass, elements;
-        tdscore = document.getElementsByName('tdscore');
-        tdscorecpass = document.getElementsByName('tdscorecpass');
-        tdscorecnotpass = document.getElementsByName('tdscorecnotpass');
-        elements = [tdscorecnotpass, tdscore, tdscorecpass]
-        for (let i = 0; i < elements.length; ++i) {
-            let element = elements[i];
-            for (let j = 0; j < element.length; ++j) {
-                let item = element[j];
-                //console.log(item);
-                let score_num = item.innerText * 1;
-                let score_raw = item.innerText;
-                if (score_raw.length > 0) {
-                    if (score_num >= 90 && score_num <= 100 || score_raw === "A") {
-                        item.innerText = score_raw + ' / 4.0';
-                    } else if (score_num >= 85 && score_num <= 89.9 || score_raw === "A-") {
-                        item.innerText = score_raw + ' / 3.7';
-                    } else if (score_num >= 82 && score_num <= 84.9 || score_raw === "B+") {
-                        item.innerText = score_raw + ' / 3.3';
-                    } else if (score_num >= 78 && score_num <= 81.9 || score_raw === "B") {
-                        item.innerText = score_raw + ' / 3.0';
-                    } else if (score_num >= 75 && score_num <= 77.9 || score_raw === "B-") {
-                        item.innerText = score_raw + ' / 2.7';
-                    } else if (score_num >= 72 && score_num <= 74.9 || score_raw === "C+") {
-                        item.innerText = score_raw + ' / 2.3';
-                    } else if (score_num >= 68 && score_num <= 71.9 || score_raw === "C") {
-                        item.innerText = score_raw + ' / 2.0';
-                    } else if (score_num >= 66 && score_num <= 67.9 || score_raw === "C-") {
-                        item.innerText = score_raw + ' / 1.7';
-                    } else if (score_num >= 64 && score_num <= 65.9 || score_raw === "D") {
-                        item.innerText = score_raw + ' / 1.5';
-                    } else if (score_num >= 60 && score_num <= 63.9 || score_raw === "D-") {
-                        item.innerText = score_raw + ' / 1.0';
-                    } else if ((score_num >= 0 && score_num <= 59.9 || score_raw === "F")) {
-                        item.innerText = score_raw + ' / 0.0';
-                    } else if (score_raw === "P" || score_raw === "L") {
-                        item.innerText = score_raw + ' / 不计';
-                    }
-                    // 标红压线绩点
-                    if (score_num === 89 || score_num === 84 || score_num === 81 || score_num === 77 || score_num === 74 ||
-                        score_num === 71 || score_num === 67 || score_num === 65 || score_num === 63 || score_num === 59) {
-                        item.style.color = 'red';
-                    }
-                }
+    function score_conversion(item) {
+        let score_num = item.innerText * 1;
+        let score_raw = item.innerText;
+        if (score_raw.length > 0) {
+            if (score_num >= 90 && score_num <= 100 || score_raw === "A") {
+                item.innerText = score_raw + ' / 4.0';
+            } else if (score_num >= 85 && score_num <= 89.9 || score_raw === "A-") {
+                item.innerText = score_raw + ' / 3.7';
+            } else if (score_num >= 82 && score_num <= 84.9 || score_raw === "B+") {
+                item.innerText = score_raw + ' / 3.3';
+            } else if (score_num >= 78 && score_num <= 81.9 || score_raw === "B") {
+                item.innerText = score_raw + ' / 3.0';
+            } else if (score_num >= 75 && score_num <= 77.9 || score_raw === "B-") {
+                item.innerText = score_raw + ' / 2.7';
+            } else if (score_num >= 72 && score_num <= 74.9 || score_raw === "C+") {
+                item.innerText = score_raw + ' / 2.3';
+            } else if (score_num >= 68 && score_num <= 71.9 || score_raw === "C") {
+                item.innerText = score_raw + ' / 2.0';
+            } else if (score_num >= 66 && score_num <= 67.9 || score_raw === "C-") {
+                item.innerText = score_raw + ' / 1.7';
+            } else if (score_num >= 64 && score_num <= 65.9 || score_raw === "D") {
+                item.innerText = score_raw + ' / 1.5';
+            } else if (score_num >= 60 && score_num <= 63.9 || score_raw === "D-") {
+                item.innerText = score_raw + ' / 1.0';
+            } else if ((score_num >= 0 && score_num <= 59.9 || score_raw === "F")) {
+                item.innerText = score_raw + ' / 0.0';
+            } else if (score_raw === "P" || score_raw === "L") {
+                item.innerText = score_raw + ' / 不计';
             }
+            // 标红压线绩点 暂时不使用
+            // if (score_num === 89 || score_num === 84 || score_num === 81 || score_num === 77 || score_num === 74 ||
+            //     score_num === 71 || score_num === 67 || score_num === 65 || score_num === 63 || score_num === 59) {
+            //     item.style.color = 'red';
+            // }
         }
     }
 
@@ -159,23 +147,64 @@
 
     function evaluate_helper() {
         let tbllist = document.getElementsByClassName('tbllist');
+        let th = document.createElement('TH');
+        th.innerText = '一键评估';
+        let heading = tbllist[0].children[0].children[0];
+        heading.insertBefore(th, heading.children[4]);
+
+        let evaluate_list = ['结果', '非常大', '比较大', '一般', '很少'];
         let course_count = tbllist[0].children[0].childElementCount - 2;
-        let row = tbllist[0].children[0].children;
-        let evaluate_btn = document.createElement('input');
-        evaluate_btn.type = 'button';
-        evaluate_btn.value = '一键赋值';
-        evaluate_btn.onclick = function () {
-            for (let i = 0; i < course_count; ++i) {
-                for (let j = 0; j < 4; ++j) {
-                    let evaluate_name = 'classlist[' + i + '].ItemValue[' + j + ']';
-                    let select = document.getElementsByName(evaluate_name);
-                    select[0].children[level].selected = true;
+        for (let i = 1; i <= course_count; ++i) {
+            let select = document.createElement('SELECT');
+            select.style.backgroundColor = '#ffc';
+            for (let j = 0; j < evaluate_list.length; j++) {
+                let option = document.createElement('OPTION');
+                option.innerText = evaluate_list[j];
+                option.value = j;
+                if (j === 0) {
+                    option.innerText = '单行' + option.innerText;
+                    option.selected = true;
                 }
+                select.appendChild(option);
             }
+            select._params = {'row': i - 1};
+            select.addEventListener('change', function () {
+                let row = event.target._params['row']
+                for (let j = 0; j < 4; ++j) {
+                    let evaluate_name = 'classlist[' + row + '].ItemValue[' + j + ']';
+                    let raw_select = document.getElementsByName(evaluate_name);
+                    raw_select[0].children[this.value].selected = true;
+                }
+            }, false);
+            let td = document.createElement('TD');
+            td.appendChild(select);
+            let cource = tbllist[0].children[0].children[i];
+            cource.insertBefore(td, cource.children[4]);
         }
+
+        let all_select = document.createElement('SELECT');
+        all_select.style.backgroundColor = '#ffc';
+        all_select.style.marginRight = '15px';
+        for (let i = 0; i < evaluate_list.length; i++) {
+            let option = document.createElement('OPTION');
+            option.innerText = evaluate_list[i];
+            option.value = i;
+            if (i === 0) {
+                option.innerText = '全部' + option.innerText;
+                option.selected = true;
+            }
+            all_select.appendChild(option);
+        }
+        all_select.addEventListener('change', function () {
+            let selects = document.getElementsByTagName('SELECT');
+            for (let i = 0; i < selects.length; ++i) {
+                selects[i].children[this.value].selected = true;
+            }
+        }, false);
+        let row = tbllist[0].children[0].children;
         let last_row = row[row.length - 1].children[0].children[0];
         let save_btn = last_row.children[0];
-        last_row.insertBefore(evaluate_btn, save_btn);
+        last_row.insertBefore(all_select, save_btn);
     }
 
     function remove_cj_ad() {
@@ -198,11 +227,18 @@
 
     function add_xk_footer() {
         setInterval(() => {
-                let footer = document.getElementsByClassName('main-footer')[0].children[1];
-                if (! footer.innerHTML.includes('刷课助手')) {
-                    footer.innerHTML = footer.innerHTML + ' - <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/434613">刷课助手已加载</a>';
+            let footer = document.getElementsByClassName('main-footer')[0];
+            if (typeof (footer) !== "undefined") {
+                let footer_div = footer.children[1];
+                if (!footer_div.innerHTML.includes('刷课助手')) {
+                    let skzs = document.createElement('A');
+                    skzs.innerText = '刷课助手已加载';
+                    skzs.href = 'https://greasyfork.org/zh-CN/scripts/434613';
+                    skzs.target = '_blank';
+                    footer_div.innerHTML = footer_div.innerHTML + ' - ' + skzs.outerHTML;
                 }
-            }, 0)
+            }
+        }, 0)
     }
 
     function remove_sr_ad() {
@@ -211,40 +247,166 @@
     }
 
     function read_all_msg() {
-        window.onload = function () {
+        // 为了兼容 Firefox
+        let tips_interval = setInterval(function () {
             let tips = document.getElementsByClassName('f-panel-title-text')[0];
-            tips.innerText = '即将开始自动阅读所有未读消息【点击此处停止】';
-            let msg_list = document.getElementsByClassName('f-datalist-list')[0];
-            let i = 0;
-            let unread_count = 0;
-            let interval_id = setTimeout(function () {
-                interval_id = setInterval(function () {
-                    tips.innerText = '【点击停止】正在检索第' + (i + 1) + '条消息';
-                    if (i < msg_list.childElementCount) {
-                        let msg_item = msg_list.children[i].children[0];
-                        let msg_title = msg_item.children[0];
-                        let msg_url = msg_item.href;
-                        if (msg_title.style.color !== '') {
-                            let xhr = new XMLHttpRequest();
-                            xhr.open('GET', msg_url);
-                            xhr.send(null);
+            if (typeof (tips) !== "undefined") {
+                tips.innerText = '即将开始自动阅读所有未读消息【点击此处停止】';
+                let msg_list = document.getElementsByClassName('f-datalist-list')[0];
+                let i = 0;
+                let unread_count = 0;
+                let interval_id = setTimeout(function () {
+                    interval_id = setInterval(function () {
+                        tips.innerText = '【点击停止】正在检索第' + (i + 1) + '条消息';
+                        if (i < msg_list.childElementCount) {
+                            let msg_item = msg_list.children[i].children[0];
+                            let msg_title = msg_item.children[0];
+                            let msg_url = msg_item.href;
+                            if (msg_title.style.color !== '') {
+                                let xhr = new XMLHttpRequest();
+                                xhr.open('GET', msg_url);
+                                xhr.send(null);
 
-                            msg_title.innerText = msg_title.innerText.replace('（未读）', '');
-                            tips.innerText = '【点击停止】' + msg_title.innerText;
-                            msg_title.style = '';
-                            unread_count++;
+                                msg_title.innerText = msg_title.innerText.replace('（未读）', '');
+                                tips.innerText = '【点击停止】' + msg_title.innerText;
+                                msg_title.style = '';
+                                unread_count++;
+                            }
+                        } else {
+                            clearInterval(interval_id);
+                            tips.innerText = '自动阅读所有未读消息完成，共' + unread_count + '条';
                         }
-                    } else {
-                        clearInterval(interval_id);
-                        tips.innerText = '自动阅读所有未读消息完成，共' + unread_count + '条';
-                    }
-                    ++i;
-                }, 0);
-            }, 1000);
-            tips.onclick = function () {
-                clearInterval(interval_id);
-                tips.innerText = '已停止，刷新继续';
+                        ++i;
+                    }, 0);
+                }, 1000);
+                tips.onclick = function () {
+                    clearInterval(interval_id);
+                    tips.innerText = '已停止，刷新继续';
+                }
+                clearInterval(tips_interval);
             }
+        }, 1);
+    }
+
+    function get_current_grade_term() {
+        let term_name = document.getElementsByClassName('dropdownterm')[0].children[0].children[1].innerText;
+        let term_year = /(\d{2})学年/.exec(term_name)[1] * 1;
+        let term_type = /(.)季学期/.exec(term_name)[1];
+        let id_num = document.getElementsByClassName('nav-function-text')[0].innerText;
+        let enroll_year = /(\d{2})\d{6}/.exec(id_num)[1] * 1;
+        let term_list = {'秋': 1, '冬': 2, '春': 3, '夏': 4};
+        let term_num = term_list[term_type];
+        let grade_num = term_year - enroll_year;
+        return {'class': 'gt-' + grade_num + term_num, 'grade': grade_num, 'term': term_num};
+    }
+
+    function onchange_grade_term_select() {
+        let all_gt = document.getElementsByClassName('gt');
+        for (let i = 0; i < all_gt.length; i++) {
+            all_gt[i].style.color = '';
+        }
+        let grade_choice = document.getElementsByClassName('grade-select')[0].value;
+        let term_choice = document.getElementsByClassName('term-select')[0].value;
+        let choice_gt = document.getElementsByClassName('gt-' + grade_choice + term_choice);
+        for (let i = 0; i < choice_gt.length; i++) {
+            choice_gt[i].style.color = 'red';
         }
     }
+
+    function plan_query_page() {
+        let grade_list = {'一': 1, '二': 2, '三': 3, '四': 4, '五': 5};
+        let term_list = {'秋': 1, '冬': 2, '春': 3, '夏': 4};
+        let td_list = document.getElementsByTagName('TD');
+        for (let i = 0; i < td_list.length; i++) {
+            if (td_list[i].innerText.includes('学期')) {
+                td_list[i].innerHTML = td_list[i].innerHTML.replaceAll(/(.)年级(.)季学期/g,
+                    function ($0, $1, $2) {
+                        let span = document.createElement('SPAN');
+                        span.className = 'gt gt-' + grade_list[$1] + '0 gt-' + grade_list[$1] + term_list[$2];
+                        span.innerText = $0;
+                        return span.outerHTML;
+                    });
+            } else if (/\d.{6}\d/.test(td_list[i].innerText)) {
+                let course_id = /\d.{6}\d/.exec(td_list[i].innerText)[0];
+                td_list[i].style.cursor = 'pointer';
+                td_list[i].title = '点击查看课程简介'
+                td_list[i].onclick = function () {
+                    window.open("../DataQuery/QueryCourseIntro?courseNo=" + course_id);
+                }
+            } else if (typeof (td_list[i].attributes.name) !== "undefined"
+                && ['tdscorecnotpass', 'tdscore', 'tdscorecpass'].includes(td_list[i].attributes.name.value)) {
+                score_conversion(td_list[i]);
+            }
+        }
+
+        let reverse_grade_list = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五'};
+        let reverse_term_list = {1: '秋季', 2: '冬季', 3: '春季', 4: '夏季', 0: '全部'};
+        let current_grade_term = get_current_grade_term();
+
+        let grade_select = document.createElement('SELECT');
+        grade_select.className = 'grade-select';
+        grade_select.style.backgroundColor = '#ffc';
+        grade_select.addEventListener('change', onchange_grade_term_select);
+        let grade_val = current_grade_term['grade'];
+        for (let i = 1; i <= 5; i++) {
+            let option = document.createElement('OPTION');
+            option.innerText = reverse_grade_list[i] + '年级';
+            option.value = i;
+            if (grade_val === i) {
+                option.selected = true;
+            }
+            grade_select.appendChild(option);
+        }
+
+        let term_select = document.createElement('SELECT');
+        term_select.className = 'term-select';
+        term_select.style.backgroundColor = '#ffc';
+        term_select.addEventListener('change', onchange_grade_term_select);
+        let term_val = current_grade_term['term'];
+        for (let i = 0; i <= 4; i++) {
+            let option = document.createElement('OPTION');
+            option.innerText = reverse_term_list[i] + '学期';
+            option.value = i;
+            if (term_val === i) {
+                option.selected = true;
+            }
+            term_select.appendChild(option);
+        }
+
+        let th_list = document.getElementsByTagName('TH');
+        for (let i = 0; i < th_list.length; i++) {
+            if (th_list[i].innerText.includes('教学计划')) {
+                th_list[i].appendChild(grade_select);
+                th_list[i].appendChild(term_select);
+                break;
+            }
+        }
+
+        let gt_class = document.getElementsByClassName(current_grade_term['class']);
+        for (let i = 0; i < gt_class.length; i++) {
+            gt_class[i].style.color = 'red';
+        }
+    }
+
+    function fresh_score(interval_id) {
+        let score_table = document.getElementById('divList');
+        if (!score_table.innerText.includes('学号')) {
+            score_table.innerText = score_table.innerText + '8秒后自动刷新';
+        } else {
+            document.title = '成绩已发布';
+            clearInterval(interval_id);
+        }
+    }
+
+    function auto_fresh_score() {
+        let interval_id = null;
+        fresh_score(interval_id);
+        let i = 0;
+        interval_id = setInterval(function () {
+            document.title = '已刷新' + ++i + '次成绩';
+            document.getElementsByTagName('INPUT')[0].click();
+            setTimeout(fresh_score, 2000, interval_id);
+        }, 8000);
+    }
+
 })();

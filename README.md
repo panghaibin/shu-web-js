@@ -7,11 +7,12 @@
 1. 第二、三轮选课自助刷课，解放双手。**【人人有课刷，抵制卖课狗】**
 2. 选课学期自动选择
 3. 选课排名页面标红排名超过额定人数的课程
-4. 学分完成情况的原始成绩换算成绩点，标红压线分数
+4. 学分完成情况页面，原始成绩换算绩点，增加点击课程号查看课程介绍，选课学期可标红
 
 ### 教务管理
-1. 教学评估页面可一键赋值，不用再重复点击
-2. 移除主页企业微X广告
+1. 教学评估页面可一键赋值，支持全部赋值和单行赋值
+2. 成绩查询页面在成绩未发布时自动刷新
+3. 移除主页企业微X广告
 
 ### 健康之路
 1. 健康之路未读消息自动阅读
@@ -48,3 +49,11 @@ let delay_time = 8000
 运行成功截图
 
 ![](img/success.jpg)
+
+## 致谢
+本项目的部分功能受到以下项目的启发
+- [alfredcai/Rhea-Shanghai-University](https://github.com/alfredcai/Rhea-Shanghai-University/blob/master/scripts/evaluate.js)
+- [ZKLlab/SHU-scheduling-helper](https://github.com/ZKLlab/SHU-scheduling-helper/commit/edd939f341dbc6e75200adc2cc403ea815b43907)
+
+## License
+[MIT licensed](./LICENSE)
