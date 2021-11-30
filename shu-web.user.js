@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.3.0
-// @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，增加点击课程号查看课程介绍，选课学期可标红 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
+// @version      3.4.0
+// @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
 // @match        *://cj.shu.edu.cn/*
@@ -30,12 +30,18 @@
         if (location.pathname === '/CourseSelectionStudent/PlanQuery') {
             plan_query_page();
         } else if (location.pathname === '/StudentQuery/QueryEnrollRank') {
+            rclick_copy_course_id();
             red_rank();
         } else if (location.pathname === '/CourseSelectionStudent/FuzzyQuery'
             && course_id.length === 8 && teacher_id.length === 4 && delay_time > 0) {
             select_course_helper();
         } else if (location.pathname === '/Home/TermIndex' && location.search !== '?auto_select=0') {
             auto_select_term();
+        } else if (location.pathname === '/StudentQuery/QueryCourse'
+            || location.pathname === '/StudentQuery/QueryCourseTable'
+            || location.pathname === '/StudentQuery/QueryDeleteCourse'
+            ) {
+            rclick_copy_course_id();
         }
         if (location.pathname !== '/Home/TermIndex') {
             manual_select_term();
@@ -326,13 +332,8 @@
                         span.innerText = $0;
                         return span.outerHTML;
                     });
-            } else if (/\d.{6}\d/.test(td_list[i].innerText)) {
-                let course_id = /\d.{6}\d/.exec(td_list[i].innerText)[0];
-                td_list[i].style.cursor = 'pointer';
-                td_list[i].title = '点击查看课程简介'
-                td_list[i].onclick = function () {
-                    window.open("../DataQuery/QueryCourseIntro?courseNo=" + course_id);
-                }
+            } else if (is_cource_id_td(td_list[i])) {
+                edit_cource_id_td(td_list[i]);
             } else if (typeof (td_list[i].attributes.name) !== "undefined"
                 && ['tdscorecnotpass', 'tdscore', 'tdscorecpass'].includes(td_list[i].attributes.name.value)) {
                 score_conversion(td_list[i]);
@@ -392,21 +393,88 @@
         let score_table = document.getElementById('divList');
         if (!score_table.innerText.includes('学号')) {
             score_table.innerText = score_table.innerText + '8秒后自动刷新';
+            return true;
         } else {
             document.title = '成绩已发布';
             clearInterval(interval_id);
+            return false;
         }
     }
 
     function auto_fresh_score() {
         let interval_id = null;
-        fresh_score(interval_id);
-        let i = 0;
-        interval_id = setInterval(function () {
-            document.title = '已刷新' + ++i + '次成绩';
-            document.getElementsByTagName('INPUT')[0].click();
-            setTimeout(fresh_score, 2000, interval_id);
-        }, 8000);
+        if (fresh_score(interval_id)) {
+            let i = 0;
+            interval_id = setInterval(function () {
+                document.title = '已刷新' + ++i + '次成绩';
+                document.getElementsByTagName('INPUT')[0].click();
+                setTimeout(fresh_score, 2000, interval_id);
+            }, 8000);
+        } else {
+            document.title = '成绩信息';
+        }
+    }
+
+    function rclick_copy_course_id() {
+        setInterval(function () {
+            let td_list = document.getElementsByTagName('TD');
+            for (let i = 0; i < td_list.length; i++) {
+                if (is_cource_id_td(td_list[i])) {
+                    edit_cource_id_td(td_list[i]);
+                }
+            }
+        }, 500);
+    }
+
+    function is_cource_id_td(item) {
+        return item.innerText.length === 8 && /\d.{6}\d/.test(item.innerText);
+    }
+
+    function edit_cource_id_td(item) {
+        let course_id = item.innerText;
+        item.className = 'course-id';
+        item.style.cursor = 'pointer';
+        item.title = '点击查看课程简介，右键复制课程号';
+        item.oncontextmenu = function (e) {
+            e.preventDefault();
+            copy_to_clipboard(course_id)
+                .then(() => toast_msg(item, '已复制'))
+                .catch(() => toast_msg(item, '复制失败'));
+        }
+        item.onclick = function () {
+            window.open("../DataQuery/QueryCourseIntro?courseNo=" + course_id);
+        }
+    }
+
+    function copy_to_clipboard(text) {
+        // From https://stackoverflow.com/a/65996386
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        } else {
+            let textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            return new Promise((res, rej) => {
+                document.execCommand('copy') ? res() : rej();
+                textArea.remove();
+            });
+        }
+    }
+
+    function toast_msg(item, msg) {
+        let toast = document.createElement('span');
+        toast.className = 'toast';
+        toast.style.fontSize = '0.8em';
+        toast.innerText = '\n' + msg;
+        item.appendChild(toast);
+        setTimeout(function () {
+            toast.remove();
+        }, 500);
     }
 
 })();
