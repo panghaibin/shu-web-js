@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.4.0
+// @version      3.4.1
 // @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
@@ -125,8 +125,8 @@
             document.getElementById('QueryAction').click();
             setTimeout(function () {
                 let tbllist = document.getElementsByClassName('tbllist');
-                let room = tbllist[0].children[0].children[1].children[8].innerText * 1;
-                let num = tbllist[0].children[0].children[1].children[9].innerText * 1;
+                let room = tbllist[0].children[0].children[1].children[9].innerText * 1;
+                let num = tbllist[0].children[0].children[1].children[10].innerText * 1;
                 console.log('第' + ++i + '次 课程号' + course_id + ' 教师号' + teacher_id + ' 容量' + room + ' 人数' + num);
                 if (room > num) {
                     tbllist[0].children[0].children[1].children[0].children[0].checked = true;
