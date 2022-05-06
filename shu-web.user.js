@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.4.1
+// @version      3.4.3
 // @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
@@ -40,7 +40,7 @@
         } else if (location.pathname === '/StudentQuery/QueryCourse'
             || location.pathname === '/StudentQuery/QueryCourseTable'
             || location.pathname === '/StudentQuery/QueryDeleteCourse'
-            ) {
+        ) {
             rclick_copy_course_id();
         }
         if (location.pathname !== '/Home/TermIndex') {
@@ -392,11 +392,15 @@
     function fresh_score(interval_id) {
         let score_table = document.getElementById('divList');
         if (score_table.innerText.includes('学号')) {
-            document.title = '成绩已发布';
-            clearInterval(interval_id);
+            if (interval_id !== null) {
+                let title = '成绩已发布';
+                blink_title(title);
+                clearInterval(interval_id);
+            }
             return false;
         } else if (score_table.innerText.includes('评估')) {
-            document.title = '成绩已发布，完成教学评估后可查看';
+            let title = '成绩已发布，教学评估完成后可查看';
+            blink_title(title);
             clearInterval(interval_id);
             return false;
         } else {
@@ -414,8 +418,6 @@
                 document.getElementsByTagName('INPUT')[0].click();
                 setTimeout(fresh_score, 2000, interval_id);
             }, 8000);
-        } else {
-            document.title = '成绩信息';
         }
     }
 
@@ -479,6 +481,19 @@
         setTimeout(function () {
             toast.remove();
         }, 500);
+    }
+
+    function blink_title(title_text, times = 0) {
+        let space = ('—').repeat(title_text.length);
+        if (times === 0) {
+            document.title = space;
+        } else if (times === 1) {
+            document.title = title_text;
+        }
+        times = (times + 1) % 2;
+        setTimeout(function () {
+            blink_title(title_text, times);
+        }, 800);
     }
 
 })();
