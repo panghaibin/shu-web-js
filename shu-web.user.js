@@ -391,13 +391,17 @@
 
     function fresh_score(interval_id) {
         let score_table = document.getElementById('divList');
-        if (!score_table.innerText.includes('学号')) {
-            score_table.innerText = score_table.innerText + '8秒后自动刷新';
-            return true;
-        } else {
+        if (score_table.innerText.includes('学号')) {
             document.title = '成绩已发布';
             clearInterval(interval_id);
             return false;
+        } else if (score_table.innerText.includes('评估')) {
+            document.title = '成绩已发布，完成教学评估后可查看';
+            clearInterval(interval_id);
+            return false;
+        } else {
+            score_table.innerText = score_table.innerText + '8秒后自动刷新';
+            return true;
         }
     }
 
