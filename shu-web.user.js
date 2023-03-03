@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.4.4
-// @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
+// @version      3.5.0
+// @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】【支持多门课程同时刷】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
 // @match        *://cj.shu.edu.cn/*
@@ -16,14 +16,19 @@
     'use strict';
 
     //--------刷课配置 开始--------
-    // 任意参数留空将不执行
+    // 是否开启刷课 (true: 开启 false: 关闭)
+    let START_SELECT = false;
 
-    // 输入课程号
-    let course_id = ''
-    // 输入对应的教师号
-    let teacher_id = ''
+    // 课程设置，可设置多个
+    let COURSE_SETTING = [
+        // 格式： ['课程号', '教师号'],
+        // 以下两个为示例 记得修改或删除，也可增加更多
+        ['0085X078', '1091'],
+        ['0085X078', '1331'],
+    ];
+
     // 刷课间隔，默认 8000 ，单位毫秒 一般不需要修改
-    let delay_time = 8000
+    let SELECT_DELAY = 8000
     //--------刷课配置 结束--------
 
     if (location.host === 'xk.autoisp.shu.edu.cn') {
@@ -32,8 +37,7 @@
         } else if (location.pathname === '/StudentQuery/QueryEnrollRank') {
             rclick_copy_course_id();
             red_rank();
-        } else if (location.pathname === '/CourseSelectionStudent/FuzzyQuery'
-            && course_id.length === 8 && teacher_id.length === 4 && delay_time > 0) {
+        } else if (location.pathname === '/CourseSelectionStudent/FuzzyQuery' && START_SELECT) {
             select_course_helper();
         } else if (location.pathname === '/Home/TermIndex' && location.search !== '?auto_select=0') {
             auto_select_term();
@@ -118,10 +122,12 @@
     }
 
     function select_course_helper() {
-        document.getElementsByName('CID')[0].defaultValue = course_id;
-        document.getElementsByName('TeachNo')[0].defaultValue = teacher_id;
         let i = 0;
         let select_id = setInterval(function () {
+            const course_id = COURSE_SETTING[i % COURSE_SETTING.length][0];
+            const teacher_id = COURSE_SETTING[i % COURSE_SETTING.length][1];
+            document.getElementsByName('CID')[0].defaultValue = course_id;
+            document.getElementsByName('TeachNo')[0].defaultValue = teacher_id;
             document.getElementById('QueryAction').click();
             setTimeout(function () {
                 let tbllist = document.getElementsByClassName('tbllist');
@@ -148,7 +154,7 @@
                     console.log(callback_msg);
                 }
             }, 1000);
-        }, delay_time);
+        }, SELECT_DELAY);
     }
 
     function evaluate_helper() {
