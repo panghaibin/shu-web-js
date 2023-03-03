@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.5.0
+// @version      3.5.1
 // @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】【支持多门课程同时刷】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
@@ -124,8 +124,10 @@
     function select_course_helper() {
         let i = 0;
         let select_id = setInterval(function () {
-            const course_id = COURSE_SETTING[i % COURSE_SETTING.length][0];
-            const teacher_id = COURSE_SETTING[i % COURSE_SETTING.length][1];
+            const index = i % COURSE_SETTING.length;
+            const course = COURSE_SETTING[index]
+            const course_id = course[0];
+            const teacher_id = course[1];
             document.getElementsByName('CID')[0].defaultValue = course_id;
             document.getElementsByName('TeachNo')[0].defaultValue = teacher_id;
             document.getElementById('QueryAction').click();
@@ -146,7 +148,12 @@
                     tbllist = document.getElementsByClassName('tbllist');
                     let callback_msg = tbllist[1].children[0].children[1].children[5].innerText
                     if (callback_msg.includes('成功')) {
-                        clearInterval(select_id);
+                        COURSE_SETTING.splice(index, 1);
+                        if (COURSE_SETTING.length === 0) {
+                            clearInterval(select_id);
+                        } else {
+                            CloseDialog('divOperationResult');
+                        }
                     } else {
                         // 关闭选课失败的窗口
                         CloseDialog('divOperationResult');
