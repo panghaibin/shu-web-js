@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         上海大学网站增强 - 刷课助手
 // @namespace    https://github.com/panghaibin/shu-web-js
-// @version      3.5.1
-// @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】【支持多门课程同时刷】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告 <健康之路>1.健康之路未读消息自动阅读 2.移除首页横幅广告
+// @version      3.5.2
+// @description  <选课系统>1.第二、三轮选课自助刷课，解放双手。【人人有课刷，抵制卖课狗】【支持多门课程同时刷】 2.选课学期自动选择 3.选课排名页面标红排名超过额定人数的课程 4.学分完成情况页面，原始成绩换算绩点，选课学期可标红 5.所有存在显示课程号的页面，支持点击课程号查看课程介绍，右键直接复制课程号 <教务管理>1.教学评估页面可一键赋值，支持全部赋值和单行赋值 2.成绩查询页面在成绩未发布时自动刷新 3.移除主页企业微X广告
 // @author       panghaibin
 // @match        *://xk.autoisp.shu.edu.cn/*
 // @match        *://cj.shu.edu.cn/*
-// @match        *://selfreport.shu.edu.cn/*
 // @grant        none
 // @license      MIT
 // @supportURL   https://github.com/panghaibin/shu-web-js/issues
@@ -58,12 +57,6 @@
             remove_cj_ad();
         } else if (location.pathname === '/StudentPortal/ScoreQuery') {
             auto_fresh_score();
-        }
-    } else if (location.host === 'selfreport.shu.edu.cn') {
-        if (location.pathname === '/Default.aspx' || location.pathname === '/') {
-            remove_sr_ad();
-        } else if (location.pathname === '/MyMessages.aspx') {
-            read_all_msg();
         }
     }
 
@@ -258,53 +251,6 @@
                 }
             }
         }, 0)
-    }
-
-    function remove_sr_ad() {
-        document.getElementsByClassName('pic slick-initialized slick-slider')[0].remove();
-        document.getElementById('countdown').remove();
-    }
-
-    function read_all_msg() {
-        // 为了兼容 Firefox
-        let tips_interval = setInterval(function () {
-            let tips = document.getElementsByClassName('f-panel-title-text')[0];
-            if (typeof (tips) !== "undefined") {
-                tips.innerText = '即将开始自动阅读所有未读消息【点击此处停止】';
-                let msg_list = document.getElementsByClassName('f-datalist-list')[0];
-                let i = 0;
-                let unread_count = 0;
-                let interval_id = setTimeout(function () {
-                    interval_id = setInterval(function () {
-                        tips.innerText = '【点击停止】正在检索第' + (i + 1) + '条消息';
-                        if (i < msg_list.childElementCount) {
-                            let msg_item = msg_list.children[i].children[0];
-                            let msg_title = msg_item.children[0];
-                            let msg_url = msg_item.href;
-                            if (msg_title.style.color !== '') {
-                                let xhr = new XMLHttpRequest();
-                                xhr.open('GET', msg_url);
-                                xhr.send(null);
-
-                                msg_title.innerText = msg_title.innerText.replace('（未读）', '');
-                                tips.innerText = '【点击停止】' + msg_title.innerText;
-                                msg_title.style = '';
-                                unread_count++;
-                            }
-                        } else {
-                            clearInterval(interval_id);
-                            tips.innerText = '自动阅读所有未读消息完成，共' + unread_count + '条';
-                        }
-                        ++i;
-                    }, 0);
-                }, 1000);
-                tips.onclick = function () {
-                    clearInterval(interval_id);
-                    tips.innerText = '已停止，刷新继续';
-                }
-                clearInterval(tips_interval);
-            }
-        }, 1);
     }
 
     function get_current_grade_term() {
